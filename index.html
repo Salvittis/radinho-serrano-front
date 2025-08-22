@@ -742,44 +742,22 @@
         }
 
         // Play received audio - VERSÃO COM MÚLTIPLOS FALLBACKS
-        async function playReceivedAudio(base64Audio) {
-            try {
-                console.log('📥 Recebendo áudio, tamanho:', base64Audio.length);
-                
-                // Método 1: Data URL direto (mais compatível)
-                const audio = new Audio();
-                audio.src = 'data:audio/webm;base64,' + base64Audio;
-                
-                // Configurações para melhor compatibilidade
-                audio.volume = 1.0;
-                audio.preload = 'auto';
-                
-                // Tentar tocar com tratamento de erro
-                const playPromise = audio.play();
-                
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            console.log('✅ Áudio reproduzindo');
-                        })
-                        .catch(error => {
-                            console.error('❌ Erro ao tocar (método 1):', error);
-                            // Tentar método alternativo
-                            playAudioAlternative(base64Audio);
-                        });
-                }
-                
-                // Limpar após tocar
-                audio.onended = () => {
-                    audio.src = '';
-                };
-                
-            } catch (err) {
-                console.error('❌ Erro geral no áudio:', err);
-                // Tentar método alternativo
-                playAudioAlternative(base64Audio);
-            }
-        }
+       async function playReceivedAudio(base64Audio) {
+    try {
+        // Método principal - mais compatível
+        const audio = new Audio('data:audio/webm;base64,' + base64Audio);
+        audio.play().catch(err => {
+            // Fallback se falhar
+            const bytes = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
+            const blob = new Blob([bytes], { type: 'audio/webm' });
+            const url = URL.createObjectURL(blob);
+            const audio2 = new Audio(url);
+            audio2.play();
+        });
+    } catch (err) {
+        showToast('Erro no áudio');
+    }
+}
 
         // Método alternativo para tocar áudio
         function playAudioAlternative(base64Audio) {
