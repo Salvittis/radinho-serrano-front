@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>Radinho Serrano - Walkie Talkie Online</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Login Screen */
+        .login-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-screen.hidden {
+            display: none;
+        }
+
+        .app-logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .app-title {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #fff, #ffd700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-subtitle {
+            font-size: 16px;
+            opacity: 0.8;
+            margin-bottom: 40px;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #ffd700;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .login-button:active {
+            transform: scale(0.98);
+        }
+
+        .channel-code {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+        }
+
+        .channel-code-label {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .channel-code-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            letter-spacing: 2px;
+        }
+
+        /* Radio Screen */
+        .radio-screen {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+        }
+
+        .radio-screen.active {
+            display: flex;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: blink 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .exit-button {
+            padding: 8px 16px;
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            border-radius: 20px;
+            color: #ef4444;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .channel-display {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin: 0 20px;
+        }
+
+        .channel-label {
+            font-size: 12px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+
+        .channel-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        .channel-info {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .users-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .users-title {
+            font-size: 14px;
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .user-item.speaking {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 237, 78, 0.2));
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            transform: translateX(5px);
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+        }
+
+        .user-item.speaking .user-avatar {
+            animation: avatarPulse 1s infinite;
+        }
+
+        @keyframes avatarPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .user-status {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .speaking-badge {
+            padding: 4px 12px;
+            background: #ffd700;
+            color: #1a1a2e;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: none;
+        }
+
+        .user-item.speaking .speaking-badge {
+            display: block;
+            animation: fadeInOut 1s infinite;
+        }
+
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .ptt-section {
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .ptt-button {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ptt-button:active,
+        .ptt-button.active {
+            background: linear-gradient(135deg, #10b981, #059669);
+            transform: scale(0.95);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.6);
+        }
+
+        .ptt-button.active::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            animation: ripple 1s infinite;
+        }
+
+        @keyframes ripple {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .ptt-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .ptt-text {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .audio-visualizer {
+            width: 100%;
+            height: 40px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-top: 15px;
+        }
+
+        .audio-visualizer.active {
+            display: flex;
+        }
+
+        .audio-bar {
+            width: 4px;
+            background: linear-gradient(to top, #ffd700, #ffed4e);
+            border-radius: 2px;
+            animation: audioWave 0.5s infinite;
+        }
+
+        .audio-bar:nth-child(1) { animation-delay: 0s; height: 10px; }
+        .audio-bar:nth-child(2) { animation-delay: 0.1s; height: 20px; }
+        .audio-bar:nth-child(3) { animation-delay: 0.2s; height: 15px; }
+        .audio-bar:nth-child(4) { animation-delay: 0.3s; height: 25px; }
+        .audio-bar:nth-child(5) { animation-delay: 0.4s; height: 18px; }
+        .audio-bar:nth-child(6) { animation-delay: 0.5s; height: 22px; }
+        .audio-bar:nth-child(7) { animation-delay: 0.6s; height: 16px; }
+
+        @keyframes audioWave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.5); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-height: 700px) {
+            .ptt-button {
+                width: 110px;
+                height: 110px;
+            }
+            .ptt-icon {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div class="login-screen" id="loginScreen">
+            <div class="app-logo">📻</div>
+            <h1 class="app-title">Radinho Serrano</h1>
+            <p class="app-subtitle">Walkie-Talkie com seus amigos</p>
+            
+            <div class="login-form">
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        class="input-field" 
+                        id="userName" 
+                        placeholder="Seu nome ou apelido"
+                        maxlength="20"
+                        autocomplete="off"
+                    >
+                </div>
+                <div class="input-group">
+                    <input 
+                        type="text" 
+                        class="input-field" 
+                        id="channelCode" 
+                        placeholder="Código do canal (ex: AMIGOS)"
+                        maxlength="10"
+                        autocomplete="off"
+                        style="text-transform: uppercase;"
+                    >
+                </div>
+                <button class="login-button" id="joinButton">
+                    ENTRAR NO CANAL
+                </button>
+            </div>
+            
+            <div class="channel-code">
+                <div class="channel-code-label">Crie um código único para seu grupo</div>
+                <div class="channel-code-value" id="suggestedCode">AMIGOS</div>
+            </div>
+        </div>
+
+        <!-- Radio Screen -->
+        <div class="radio-screen" id="radioScreen">
+            <div class="header">
+                <div class="connection-status">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span id="statusText">Conectando...</span>
+                    </div>
+                    <button class="exit-button" id="exitButton">Sair</button>
+                </div>
+                
+                <div class="channel-display">
+                    <div class="channel-label">Canal</div>
+                    <div class="channel-name" id="channelName">-</div>
+                    <div class="channel-info">
+                        <span id="usersCount">0</span> pessoas online
+                    </div>
+                </div>
+            </div>
+
+            <div class="users-section">
+                <div class="users-title">Pessoas Online</div>
+                <div id="usersList"></div>
+            </div>
+
+            <div class="ptt-section">
+                <button class="ptt-button" id="pttButton">
+                    <div class="ptt-icon">🎙️</div>
+                    <div class="ptt-text" id="pttText">SEGURE PARA FALAR</div>
+                </button>
+                
+                <div class="audio-visualizer" id="audioVisualizer">
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                    <div class="audio-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script>
+        // Configuration
+        const SOCKET_SERVER = 'https://radinho-server-1.onrender.com'; // Servidor gratuito no Glitch
+        
+        // App State
+        let socket = null;
+        let currentUser = null;
+        let currentChannel = null;
+        let isTransmitting = false;
+        let mediaRecorder = null;
+        let audioStream = null;
+        let audioChunks = [];
+        let users = new Map();
+        let audioContext = null;
+        let audioQueue = [];
+        let isPlayingAudio = false;
+
+        // DOM Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const radioScreen = document.getElementById('radioScreen');
+        const userNameInput = document.getElementById('userName');
+        const channelCodeInput = document.getElementById('channelCode');
+        const joinButton = document.getElementById('joinButton');
+        const exitButton = document.getElementById('exitButton');
+        const pttButton = document.getElementById('pttButton');
+        const pttText = document.getElementById('pttText');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const channelName = document.getElementById('channelName');
+        const usersCount = document.getElementById('usersCount');
+        const usersList = document.getElementById('usersList');
+        const audioVisualizer = document.getElementById('audioVisualizer');
+        const toast = document.getElementById('toast');
+        const suggestedCode = document.getElementById('suggestedCode');
+
+        // Generate random channel codes
+        const channelSuggestions = [
+            'AMIGOS', 'GRUPO', 'RAPAZES', 'GALERA', 'SQUAD',
+            'TEAM', 'PESSOAL', 'BROS', 'MANOS', 'TURMA'
+        ];
+
+        // Initialize
+        function init() {
+            setupEventListeners();
+            generateChannelSuggestion();
+            requestMicrophonePermission();
+            initAudioContext();
+        }
+
+        // Setup Event Listeners
+        function setupEventListeners() {
+            joinButton.addEventListener('click', handleJoin);
+            exitButton.addEventListener('click', handleExit);
+            
+            // PTT Button - Touch Events
+            pttButton.addEventListener('touchstart', handlePTTStart, { passive: false });
+            pttButton.addEventListener('touchend', handlePTTEnd, { passive: false });
+            
+            // PTT Button - Mouse Events (for desktop testing)
+            pttButton.addEventListener('mousedown', handlePTTStart);
+            pttButton.addEventListener('mouseup', handlePTTEnd);
+            pttButton.addEventListener('mouseleave', handlePTTEnd);
+            
+            // Enter key on inputs
+            userNameInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') channelCodeInput.focus();
+            });
+            
+            channelCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleJoin();
+            });
+            
+            // Auto uppercase channel code
+            channelCodeInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.toUpperCase();
+            });
+        }
+
+        // Generate channel suggestion
+        function generateChannelSuggestion() {
+            const randomIndex = Math.floor(Math.random() * channelSuggestions.length);
+            const randomNumber = Math.floor(Math.random() * 99) + 1;
+            suggestedCode.textContent = `${channelSuggestions[randomIndex]}${randomNumber}`;
+        }
+
+        // Request microphone permission
+        async function requestMicrophonePermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                console.log('Microphone permission granted');
+            } catch (err) {
+                console.log('Microphone permission denied:', err);
+            }
+        }
+
+        // Initialize Audio Context
+        function initAudioContext() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        // Handle Join
+        function handleJoin() {
+            const userName = userNameInput.value.trim();
+            const channelCode = channelCodeInput.value.trim().toUpperCase() || 'GERAL';
+            
+            if (!userName) {
+                showToast('Digite seu nome!');
+                return;
+            }
+            
+            currentUser = {
+                id: generateId(),
+                name: userName,
+                avatar: userName[0].toUpperCase()
+            };
+            
+            currentChannel = channelCode;
+            
+            connectToServer();
+        }
+
+        // Connect to Socket Server
+        function connectToServer() {
+            showToast('Conectando...');
+            
+            socket = io(SOCKET_SERVER, {
+                transports: ['websocket', 'polling']
+            });
+            
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                updateConnectionStatus(true);
+                
+                // Join channel
+                socket.emit('join', {
+                    user: currentUser,
+                    channel: currentChannel
+                });
+                
+                // Show radio screen
+                loginScreen.classList.add('hidden');
+                radioScreen.classList.add('active');
+                channelName.textContent = currentChannel;
+                
+                showToast(`Conectado ao canal ${currentChannel}`);
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                updateConnectionStatus(false);
+                showToast('Desconectado');
+            });
+            
+            socket.on('users', (usersList) => {
+                updateUsersList(usersList);
+            });
+            
+            socket.on('userJoined', (user) => {
+                if (user.id !== currentUser.id) {
+                    showToast(`${user.name} entrou no canal`);
+                }
+            });
+            
+            socket.on('userLeft', (user) => {
+                showToast(`${user.name} saiu do canal`);
+            });
+            
+            socket.on('userSpeaking', (userId) => {
+                setUserSpeaking(userId, true);
+            });
+            
+            socket.on('userStoppedSpeaking', (userId) => {
+                setUserSpeaking(userId, false);
+            });
+            
+            socket.on('audioData', async (data) => {
+                if (data.userId !== currentUser.id) {
+                    playReceivedAudio(data.audio);
+                }
+            });
+            
+            socket.on('error', (error) => {
+                showToast(`Erro: ${error}`);
+            });
+        }
+
+        // Update connection status
+        function updateConnectionStatus(connected) {
+            if (connected) {
+                statusDot.classList.remove('offline');
+                statusText.textContent = 'Conectado';
+            } else {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'Desconectado';
+            }
+        }
+
+        // Update users list
+        function updateUsersList(usersList) {
+            users.clear();
+            usersList.forEach(user => users.set(user.id, user));
+            
+            usersCount.textContent = users.size;
+            renderUsers();
+        }
+
+        // Render users
+        function renderUsers() {
+            const usersHTML = Array.from(users.values()).map(user => {
+                const isCurrentUser = user.id === currentUser.id;
+                return `
+                    <div class="user-item" id="user-${user.id}">
+                        <div class="user-avatar">${user.avatar}</div>
+                        <div class="user-info">
+                            <div class="user-name">
+                                ${user.name} ${isCurrentUser ? '(Você)' : ''}
+                            </div>
+                            <div class="user-status">Online</div>
+                        </div>
+                        <div class="speaking-badge">FALANDO</div>
+                    </div>
+                `;
+            }).join('');
+            
+            usersList.innerHTML = usersHTML;
+        }
+
+        // Set user speaking state
+        function setUserSpeaking(userId, speaking) {
+            const userElement = document.getElementById(`user-${userId}`);
+            if (userElement) {
+                if (speaking) {
+                    userElement.classList.add('speaking');
+                } else {
+                    userElement.classList.remove('speaking');
+                }
+            }
+        }
+
+        // Handle PTT Start
+        async function handlePTTStart(e) {
+            e.preventDefault();
+            
+            if (!socket || !socket.connected) {
+                showToast('Você está desconectado!');
+                return;
+            }
+            
+            if (isTransmitting) return;
+            
+            try {
+                // Get microphone
+                audioStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                // Start recording
+                mediaRecorder = new MediaRecorder(audioStream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const arrayBuffer = await audioBlob.arrayBuffer();
+                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+                    
+                    // Send audio to server
+                    socket.emit('audioData', {
+                        userId: currentUser.id,
+                        audio: base64Audio,
+                        channel: currentChannel
+                    });
+                };
+                
+                mediaRecorder.start();
+                
+                isTransmitting = true;
+                pttButton.classList.add('active');
+                pttText.textContent = 'FALANDO...';
+                audioVisualizer.classList.add('active');
+                
+                // Notify server
+                socket.emit('speaking', {
+                    userId: currentUser.id,
+                    channel: currentChannel
+                });
+                
+                // Update own speaking state
+                setUserSpeaking(currentUser.id, true);
+                
+                // Haptic feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+                
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                showToast('Erro ao acessar microfone');
+            }
+        }
+
+        // Handle PTT End
+        function handlePTTEnd() {
+            if (!isTransmitting) return;
+            
+            isTransmitting = false;
+            pttButton.classList.remove('active');
+            pttText.textContent = 'SEGURE PARA FALAR';
+            audioVisualizer.classList.remove('active');
+            
+            // Stop recording
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+            
+            // Stop audio stream
+            if (audioStream) {
+                audioStream.getTracks().forEach(track => track.stop());
+                audioStream = null;
+            }
+            
+            // Notify server
+            if (socket && socket.connected) {
+                socket.emit('stopSpeaking', {
+                    userId: currentUser.id,
+                    channel: currentChannel
+                });
+            }
+            
+            // Update own speaking state
+            setUserSpeaking(currentUser.id, false);
+        }
+
+        // Play received audio
+        async function playReceivedAudio(base64Audio) {
+            try {
+                // Convert base64 to blob
+                const binaryString = atob(base64Audio);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                const audioBlob = new Blob([bytes], { type: 'audio/webm' });
+                
+                // Create audio element and play
+                const audio = new Audio();
+                audio.src = URL.createObjectURL(audioBlob);
+                audio.play().catch(err => {
+                    console.error('Error playing audio:', err);
+                });
+                
+                // Clean up
+                audio.onended = () => {
+                    URL.revokeObjectURL(audio.src);
+                };
+                
+            } catch (err) {
+                console.error('Error processing received audio:', err);
+            }
+        }
+
+        // Handle Exit
+        function handleExit() {
+            if (socket) {
+                socket.disconnect();
+            }
+            
+            radioScreen.classList.remove('active');
+            loginScreen.classList.remove('hidden');
+            
+            // Clear inputs
+            userNameInput.value = '';
+            channelCodeInput.value = '';
+            
+            // Reset state
+            currentUser = null;
+            currentChannel = null;
+            users.clear();
+            
+            generateChannelSuggestion();
+        }
+
+        // Show toast message
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Generate unique ID
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        // Prevent zoom on double tap (iOS)
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
