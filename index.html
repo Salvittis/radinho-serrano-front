@@ -20,7 +20,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
-            height: 100dvh; /* Dynamic viewport height para mobile */
+            height: 100dvh;
             display: flex;
             flex-direction: column;
             color: white;
@@ -31,7 +31,6 @@
             left: 0;
         }
 
-        /* Safe area para iPhone */
         .container {
             flex: 1;
             display: flex;
@@ -103,7 +102,19 @@
             cursor: pointer;
         }
 
-        /* Radio Screen - Layout fixo para mobile */
+        /* Audio Permission Button */
+        .audio-permission-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Radio Screen */
         .radio-screen {
             display: none;
             flex-direction: column;
@@ -158,13 +169,12 @@
             color: #ffd700;
         }
 
-        /* Users Section - Scrollable */
         .users-section {
             flex: 1;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
             padding: 15px;
-            min-height: 0; /* Importante para scroll funcionar */
+            min-height: 0;
         }
 
         .user-item {
@@ -212,18 +222,23 @@
             display: block;
         }
 
-        /* PTT Section - Fixo no bottom */
         .ptt-section {
             padding: 15px;
             padding-bottom: calc(15px + env(safe-area-inset-bottom));
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             flex-shrink: 0;
             position: relative;
             z-index: 100;
+        }
+
+        .audio-status {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 10px;
         }
 
         .ptt-button {
@@ -240,7 +255,7 @@
             cursor: pointer;
             transition: all 0.3s;
             box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
-            touch-action: none; /* Previne scroll ao tocar */
+            touch-action: none;
         }
 
         .ptt-button:active,
@@ -283,7 +298,26 @@
             opacity: 1;
         }
 
-        /* Ajustes para telas pequenas */
+        /* Debug panel */
+        .debug-panel {
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 9999;
+            max-width: 200px;
+            display: none;
+        }
+
+        .debug-panel.show {
+            display: block;
+        }
+
         @media (max-height: 600px) {
             .ptt-button {
                 width: 80px;
@@ -292,34 +326,6 @@
             .ptt-icon {
                 font-size: 30px;
             }
-            .ptt-text {
-                font-size: 10px;
-            }
-            .header {
-                padding: 8px 12px;
-            }
-            .users-section {
-                padding: 10px;
-            }
-        }
-
-        /* Debug info */
-        .debug-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #0f0;
-            font-family: monospace;
-            font-size: 10px;
-            padding: 5px;
-            border-radius: 5px;
-            z-index: 9999;
-            display: none;
-        }
-
-        .debug-info.show {
-            display: block;
         }
     </style>
 </head>
@@ -350,6 +356,9 @@
                 <button class="login-button" id="joinButton">
                     ENTRAR NO CANAL
                 </button>
+                <button class="audio-permission-btn" id="audioPermBtn">
+                    🔊 Ativar Áudio (Importante!)
+                </button>
             </div>
         </div>
 
@@ -374,12 +383,13 @@
                 </div>
             </div>
 
-            <div class="users-section" id="usersSection">
+            <div class="users-section">
                 <div style="font-size: 12px; opacity: 0.7; margin-bottom: 10px;">USUÁRIOS ONLINE</div>
                 <div id="usersList"></div>
             </div>
 
             <div class="ptt-section">
+                <div class="audio-status" id="audioStatus">🔊 Áudio ativo</div>
                 <button class="ptt-button" id="pttButton">
                     <div class="ptt-icon">🎙️</div>
                     <div class="ptt-text" id="pttText">SEGURE</div>
@@ -389,12 +399,12 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <div class="debug-info" id="debugInfo"></div>
+    <div class="debug-panel" id="debugPanel"></div>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
         // ===== CONFIGURAÇÃO =====
-        const SOCKET_SERVER = 'https://radinho-server-1.onrender.com'; // MUDE AQUI!
+        const SOCKET_SERVER = 'https://SEU-SERVIDOR.onrender.com'; // MUDE AQUI!
         
         // ===== ESTADO DO APP =====
         let socket = null;
@@ -403,35 +413,24 @@
         let isTransmitting = false;
         let mediaRecorder = null;
         let audioStream = null;
-        let audioChunks = [];
         let users = new Map();
-
-        // ===== COMPATIBILIDADE DE ÁUDIO =====
-        // Detectar melhor formato de áudio suportado
-        function getSupportedMimeType() {
-            const types = [
-                'audio/webm;codecs=opus',
-                'audio/webm',
-                'audio/ogg;codecs=opus',
-                'audio/mp4',
-                'audio/mpeg'
-            ];
-            
-            for (let type of types) {
-                if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
-                    console.log('Usando codec:', type);
-                    return type;
-                }
-            }
-            return ''; // Usa o padrão do navegador
-        }
-
+        
+        // ===== SISTEMA DE ÁUDIO MELHORADO =====
+        let audioContext = null;
+        let audioWorkletNode = null;
+        let audioInitialized = false;
+        
+        // Fila de áudio para reprodução
+        const audioQueue = [];
+        let isPlaying = false;
+        
         // ===== ELEMENTOS DOM =====
         const loginScreen = document.getElementById('loginScreen');
         const radioScreen = document.getElementById('radioScreen');
         const userNameInput = document.getElementById('userName');
         const channelCodeInput = document.getElementById('channelCode');
         const joinButton = document.getElementById('joinButton');
+        const audioPermBtn = document.getElementById('audioPermBtn');
         const pttButton = document.getElementById('pttButton');
         const pttText = document.getElementById('pttText');
         const statusDot = document.getElementById('statusDot');
@@ -439,31 +438,73 @@
         const channelName = document.getElementById('channelName');
         const usersCount = document.getElementById('usersCount');
         const usersList = document.getElementById('usersList');
+        const audioStatus = document.getElementById('audioStatus');
         const toast = document.getElementById('toast');
+        const debugPanel = document.getElementById('debugPanel');
 
         // ===== INICIALIZAÇÃO =====
         function init() {
             setupEventListeners();
-            adjustViewportHeight();
-            requestMicrophonePermission();
+            
+            // Ativar debug se ?debug na URL
+            if (window.location.search.includes('debug')) {
+                debugPanel.classList.add('show');
+                startDebugMonitor();
+            }
         }
 
-        // Ajustar altura para mobile
-        function adjustViewportHeight() {
-            const setVH = () => {
-                const vh = window.innerHeight * 0.01;
-                document.documentElement.style.setProperty('--vh', `${vh}px`);
-            };
-            setVH();
-            window.addEventListener('resize', setVH);
-            window.addEventListener('orientationchange', setVH);
+        // ===== INICIALIZAR ÁUDIO (CRUCIAL PARA MOBILE) =====
+        async function initAudioContext() {
+            if (audioInitialized) return true;
+            
+            try {
+                // Criar contexto de áudio
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({
+                    sampleRate: 16000,
+                    latencyHint: 'interactive'
+                });
+                
+                // IMPORTANTE: No mobile, o contexto precisa ser resumido após interação do usuário
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+                
+                // Criar um oscilador silencioso para "acordar" o áudio no iOS
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                gainNode.gain.value = 0.001; // Quase silencioso
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.start();
+                setTimeout(() => oscillator.stop(), 100);
+                
+                audioInitialized = true;
+                audioStatus.textContent = '🔊 Áudio ativo';
+                console.log('✅ Contexto de áudio inicializado');
+                return true;
+                
+            } catch (err) {
+                console.error('❌ Erro ao inicializar áudio:', err);
+                audioStatus.textContent = '🔇 Erro no áudio';
+                return false;
+            }
         }
 
         // Setup Event Listeners
         function setupEventListeners() {
             joinButton.addEventListener('click', handleJoin);
             
-            // PTT Button - Touch Events (IMPORTANTE: preventDefault para evitar scroll)
+            // Botão de permissão de áudio (importante para mobile!)
+            audioPermBtn.addEventListener('click', async () => {
+                const success = await initAudioContext();
+                if (success) {
+                    await requestMicrophonePermission();
+                    showToast('✅ Áudio ativado!');
+                    audioPermBtn.style.display = 'none';
+                }
+            });
+            
+            // PTT Button - Touch Events
             pttButton.addEventListener('touchstart', handlePTTStart, { passive: false });
             pttButton.addEventListener('touchend', handlePTTEnd, { passive: false });
             
@@ -485,6 +526,13 @@
             channelCodeInput.addEventListener('input', (e) => {
                 e.target.value = e.target.value.toUpperCase();
             });
+            
+            // Importante: Ativar áudio ao tocar em qualquer lugar (iOS)
+            document.addEventListener('touchstart', () => {
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }, { once: true });
         }
 
         // Request microphone permission
@@ -493,13 +541,15 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
                 console.log('✅ Permissão de microfone concedida');
+                return true;
             } catch (err) {
                 console.log('⚠️ Permissão de microfone negada');
+                return false;
             }
         }
 
         // Handle Join
-        function handleJoin() {
+        async function handleJoin() {
             const userName = userNameInput.value.trim();
             const channelCode = channelCodeInput.value.trim().toUpperCase() || 'GERAL';
             
@@ -507,6 +557,9 @@
                 showToast('Digite seu nome!');
                 return;
             }
+            
+            // Inicializar áudio antes de entrar
+            await initAudioContext();
             
             currentUser = {
                 id: Date.now().toString(36) + Math.random().toString(36).substr(2),
@@ -569,6 +622,14 @@
                 setUserSpeaking(userId, false);
             });
             
+            // IMPORTANTE: Receber áudio em chunks para tempo real
+            socket.on('audioChunk', (data) => {
+                if (data.userId !== currentUser.id) {
+                    playAudioChunk(data.chunk);
+                }
+            });
+            
+            // Fallback para áudio completo
             socket.on('audioData', (data) => {
                 if (data.userId !== currentUser.id) {
                     playReceivedAudio(data.audio);
@@ -625,9 +686,7 @@
             }
         }
 
-        // ===== ÁUDIO - VERSÃO CORRIGIDA =====
-        
-        // Handle PTT Start
+        // ===== TRANSMISSÃO DE ÁUDIO EM TEMPO REAL =====
         async function handlePTTStart(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -639,55 +698,92 @@
             
             if (isTransmitting) return;
             
+            // Garantir que o áudio está inicializado
+            await initAudioContext();
+            
             try {
-                // Configuração de áudio otimizada para compatibilidade
+                // Configuração otimizada para tempo real
                 const constraints = {
                     audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
+                        echoCancellation: false, // Desligar para menor latência
+                        noiseSuppression: false,
                         autoGainControl: true,
-                        sampleRate: 16000 // Taxa menor para compatibilidade
+                        sampleRate: 16000,
+                        channelCount: 1
                     }
                 };
                 
                 audioStream = await navigator.mediaDevices.getUserMedia(constraints);
                 
-                // Configurar MediaRecorder com fallback
-                const mimeType = getSupportedMimeType();
-                const options = mimeType ? { mimeType } : {};
+                // Usar timeslice pequeno para streaming em tempo real
+                const options = {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 16000
+                };
+                
+                // Verificar suporte
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    delete options.mimeType; // Usar padrão
+                }
                 
                 mediaRecorder = new MediaRecorder(audioStream, options);
-                audioChunks = [];
                 
-                mediaRecorder.ondataavailable = (event) => {
+                // Enviar chunks em tempo real
+                mediaRecorder.ondataavailable = async (event) => {
                     if (event.data.size > 0) {
-                        audioChunks.push(event.data);
+                        // Converter chunk para base64 e enviar imediatamente
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result.split(',')[1];
+                            
+                            // Enviar chunk individual para tempo real
+                            socket.emit('audioChunk', {
+                                userId: currentUser.id,
+                                chunk: base64,
+                                channel: currentChannel
+                            });
+                        };
+                        reader.readAsDataURL(event.data);
                     }
                 };
                 
-                mediaRecorder.onstop = async () => {
-                    // Criar blob e converter para base64
-                    const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
-                    
-                    // Usar FileReader para conversão confiável
+                // Quando parar, enviar áudio completo como fallback
+                const audioChunks = [];
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                        
+                        // Enviar chunk em tempo real
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result.split(',')[1];
+                            socket.emit('audioChunk', {
+                                userId: currentUser.id,
+                                chunk: base64,
+                                channel: currentChannel
+                            });
+                        };
+                        reader.readAsDataURL(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // Enviar áudio completo como backup
+                    const blob = new Blob(audioChunks, { type: 'audio/webm' });
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        const base64String = reader.result;
-                        const base64Audio = base64String.split(',')[1];
-                        
-                        console.log('📤 Enviando áudio, tamanho:', base64Audio.length);
-                        
+                        const base64 = reader.result.split(',')[1];
                         socket.emit('audioData', {
                             userId: currentUser.id,
-                            audio: base64Audio,
+                            audio: base64,
                             channel: currentChannel
                         });
                     };
-                    reader.readAsDataURL(audioBlob);
+                    reader.readAsDataURL(blob);
                 };
                 
-                // Começar gravação
-                mediaRecorder.start(100); // Chunks de 100ms
+                // Começar gravação com chunks de 100ms para tempo real
+                mediaRecorder.start(100);
                 
                 isTransmitting = true;
                 pttButton.classList.add('active');
@@ -700,8 +796,9 @@
                 
                 setUserSpeaking(currentUser.id, true);
                 
-                // Haptic feedback
                 if (navigator.vibrate) navigator.vibrate(30);
+                
+                updateDebug('📡 Transmitindo...');
                 
             } catch (err) {
                 console.error('❌ Erro no microfone:', err);
@@ -739,58 +836,148 @@
             }
             
             setUserSpeaking(currentUser.id, false);
+            updateDebug('⭕ Parado');
         }
 
-        // Play received audio - VERSÃO COM MÚLTIPLOS FALLBACKS
-       async function playReceivedAudio(base64Audio) {
-    try {
-        // Método principal - mais compatível
-        const audio = new Audio('data:audio/webm;base64,' + base64Audio);
-        audio.play().catch(err => {
-            // Fallback se falhar
-            const bytes = Uint8Array.from(atob(base64Audio), c => c.charCodeAt(0));
-            const blob = new Blob([bytes], { type: 'audio/webm' });
-            const url = URL.createObjectURL(blob);
-            const audio2 = new Audio(url);
-            audio2.play();
-        });
-    } catch (err) {
-        showToast('Erro no áudio');
-    }
-}
+        // ===== REPRODUÇÃO DE ÁUDIO OTIMIZADA PARA MOBILE =====
+        
+        // Reproduzir chunk de áudio (tempo real)
+        async function playAudioChunk(base64Chunk) {
+            if (!audioInitialized) {
+                await initAudioContext();
+            }
+            
+            // Adicionar à fila
+            audioQueue.push(base64Chunk);
+            
+            // Processar fila se não estiver tocando
+            if (!isPlaying) {
+                processAudioQueue();
+            }
+        }
 
-        // Método alternativo para tocar áudio
-        function playAudioAlternative(base64Audio) {
+        // Processar fila de áudio
+        async function processAudioQueue() {
+            if (audioQueue.length === 0) {
+                isPlaying = false;
+                return;
+            }
+            
+            isPlaying = true;
+            const base64 = audioQueue.shift();
+            
             try {
-                // Método 2: Criar blob e object URL
-                const byteCharacters = atob(base64Audio);
-                const byteNumbers = new Array(byteCharacters.length);
+                // Método 1: Criar elemento de áudio temporário
+                const audio = document.createElement('audio');
+                audio.src = 'data:audio/webm;base64,' + base64;
+                audio.volume = 1.0;
                 
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                // Importante: Play com promise para mobile
+                const playPromise = audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            updateDebug('🔊 Tocando chunk');
+                        })
+                        .catch(error => {
+                            console.error('Erro ao tocar chunk:', error);
+                            // Tentar método alternativo
+                            playWithWebAudioAPI(base64);
+                        });
                 }
                 
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'audio/webm' });
-                const url = URL.createObjectURL(blob);
-                
-                const audio = new Audio(url);
-                audio.play()
-                    .then(() => {
-                        console.log('✅ Áudio reproduzindo (método alternativo)');
-                    })
-                    .catch(err => {
-                        console.error('❌ Falha no método alternativo:', err);
-                        showToast('Erro ao reproduzir áudio');
-                    });
-                
                 audio.onended = () => {
-                    URL.revokeObjectURL(url);
+                    processAudioQueue(); // Processar próximo
                 };
                 
             } catch (err) {
-                console.error('❌ Erro no método alternativo:', err);
-                showToast('Formato de áudio incompatível');
+                console.error('Erro processando áudio:', err);
+                processAudioQueue(); // Continuar com próximo
+            }
+        }
+
+        // Reproduzir áudio completo (fallback)
+        async function playReceivedAudio(base64Audio) {
+            if (!audioInitialized) {
+                await initAudioContext();
+            }
+            
+            try {
+                updateDebug('📥 Recebido: ' + base64Audio.length);
+                
+                // Criar elemento de áudio
+                const audio = document.createElement('audio');
+                
+                // IMPORTANTE: Para iOS, precisamos adicionar ao DOM temporariamente
+                audio.style.display = 'none';
+                document.body.appendChild(audio);
+                
+                audio.src = 'data:audio/webm;base64,' + base64Audio;
+                audio.volume = 1.0;
+                
+                // Tentar reproduzir
+                const playPromise = audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✅ Áudio reproduzindo');
+                            updateDebug('✅ Tocando');
+                        })
+                        .catch(async (error) => {
+                            console.error('❌ Erro ao tocar:', error);
+                            updateDebug('❌ Erro: ' + error.message);
+                            
+                            // Tentar ativar contexto e reproduzir novamente
+                            if (audioContext.state === 'suspended') {
+                                await audioContext.resume();
+                                audio.play();
+                            }
+                        });
+                }
+                
+                // Limpar após tocar
+                audio.onended = () => {
+                    document.body.removeChild(audio);
+                };
+                
+            } catch (err) {
+                console.error('❌ Erro geral:', err);
+                updateDebug('❌ Erro geral');
+                showToast('Erro ao reproduzir áudio');
+            }
+        }
+
+        // Método alternativo com Web Audio API
+        async function playWithWebAudioAPI(base64Audio) {
+            try {
+                if (!audioContext) {
+                    await initAudioContext();
+                }
+                
+                // Converter base64 para ArrayBuffer
+                const binaryString = atob(base64Audio);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Decodificar áudio
+                const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
+                
+                // Criar source e tocar
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                source.start(0);
+                
+                console.log('✅ Tocando via Web Audio API');
+                updateDebug('✅ Web Audio API');
+                
+            } catch (err) {
+                console.error('❌ Erro Web Audio:', err);
+                updateDebug('❌ Web Audio falhou');
             }
         }
 
@@ -809,6 +996,10 @@
             currentUser = null;
             currentChannel = null;
             users.clear();
+            
+            // Limpar áudio
+            audioQueue.length = 0;
+            isPlaying = false;
         }
 
         // Show toast
@@ -821,21 +1012,27 @@
             }, 3000);
         }
 
-        // Debug mode (ative com ?debug na URL)
-        if (window.location.search.includes('debug')) {
-            const debugInfo = document.getElementById('debugInfo');
-            debugInfo.classList.add('show');
-            setInterval(() => {
-                debugInfo.innerHTML = `
-                    Socket: ${socket?.connected ? '✅' : '❌'}<br>
-                    Canal: ${currentChannel || 'N/A'}<br>
-                    Users: ${users.size}<br>
-                    TX: ${isTransmitting ? '📡' : '⭕'}
+        // Debug functions
+        function updateDebug(message) {
+            if (debugPanel.classList.contains('show')) {
+                const time = new Date().toLocaleTimeString();
+                debugPanel.innerHTML = `
+                    <div>${time}</div>
+                    <div>${message}</div>
+                    <div>Socket: ${socket?.connected ? '✅' : '❌'}</div>
+                    <div>Audio: ${audioInitialized ? '✅' : '❌'}</div>
+                    <div>Queue: ${audioQueue.length}</div>
                 `;
+            }
+        }
+
+        function startDebugMonitor() {
+            setInterval(() => {
+                updateDebug(isTransmitting ? '📡 TX' : '⭕ RX');
             }, 1000);
         }
 
-        // Prevent zoom on double tap
+        // Prevent zoom
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
