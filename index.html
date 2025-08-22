@@ -793,76 +793,99 @@
             }
         }
 
-        // Handle PTT Start
-        async function handlePTTStart(e) {
-            e.preventDefault();
-            
-            if (!socket || !socket.connected) {
-                showToast('Você está desconectado!');
-                return;
+       // Handle PTT Start - VERSÃO CORRIGIDA
+async function handlePTTStart(e) {
+    e.preventDefault();
+    
+    if (!socket || !socket.connected) {
+        showToast('Você está desconectado!');
+        return;
+    }
+    
+    if (isTransmitting) return;
+    
+    try {
+        // Get microphone com configurações otimizadas
+        audioStream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+                echoCancellation: false, // Mudado para false
+                noiseSuppression: false, // Mudado para false
+                autoGainControl: true,
+                sampleRate: 16000 // Taxa de amostragem menor
             }
-            
-            if (isTransmitting) return;
-            
-            try {
-                // Get microphone
-                audioStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
-                });
-                
-                // Start recording
-                mediaRecorder = new MediaRecorder(audioStream);
-                audioChunks = [];
-                
-                mediaRecorder.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-                
-                mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const arrayBuffer = await audioBlob.arrayBuffer();
-                    const base64Audio = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-                    
-                    // Send audio to server
-                    socket.emit('audioData', {
-                        userId: currentUser.id,
-                        audio: base64Audio,
-                        channel: currentChannel
-                    });
-                };
-                
-                mediaRecorder.start();
-                
-                isTransmitting = true;
-                pttButton.classList.add('active');
-                pttText.textContent = 'FALANDO...';
-                audioVisualizer.classList.add('active');
-                
-                // Notify server
-                socket.emit('speaking', {
-                    userId: currentUser.id,
-                    channel: currentChannel
-                });
-                
-                // Update own speaking state
-                setUserSpeaking(currentUser.id, true);
-                
-                // Haptic feedback
-                if (navigator.vibrate) {
-                    navigator.vibrate(50);
-                }
-                
-            } catch (err) {
-                console.error('Error accessing microphone:', err);
-                showToast('Erro ao acessar microfone');
-            }
+        });
+        
+        // Start recording com configurações específicas
+        const options = {
+            mimeType: 'audio/webm;codecs=opus' // Força codec opus
+        };
+        
+        // Tenta criar o MediaRecorder com o codec ideal
+        try {
+            mediaRecorder = new MediaRecorder(audioStream, options);
+        } catch (err) {
+            // Se falhar, usa o padrão
+            console.log('Codec opus não suportado, usando padrão');
+            mediaRecorder = new MediaRecorder(audioStream);
         }
+        
+        audioChunks = [];
+        
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                audioChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+            
+            // Converter para base64 de forma mais eficiente
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64Audio = reader.result.split(',')[1]; // Remove o prefixo data:audio/webm;base64,
+                
+                // DEBUG: Log para verificar se está enviando
+                console.log('Enviando áudio, tamanho:', base64Audio.length);
+                
+                // Send audio to server
+                socket.emit('audioData', {
+                    userId: currentUser.id,
+                    audio: base64Audio,
+                    channel: currentChannel,
+                    mimeType: 'audio/webm' // Envia o tipo também
+                });
+            };
+            reader.readAsDataURL(audioBlob);
+        };
+        
+        // Começar a gravar com intervalo de tempo
+        mediaRecorder.start(100); // Grava em chunks de 100ms
+        
+        isTransmitting = true;
+        pttButton.classList.add('active');
+        pttText.textContent = 'FALANDO...';
+        audioVisualizer.classList.add('active');
+        
+        // Notify server
+        socket.emit('speaking', {
+            userId: currentUser.id,
+            channel: currentChannel
+        });
+        
+        // Update own speaking state
+        setUserSpeaking(currentUser.id, true);
+        
+        // Haptic feedback
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+        
+    } catch (err) {
+        console.error('Erro ao acessar microfone:', err);
+        showToast('Erro ao acessar microfone: ' + err.message);
+    }
+}
 
         // Handle PTT End
         function handlePTTEnd() {
@@ -896,33 +919,62 @@
             setUserSpeaking(currentUser.id, false);
         }
 
-        // Play received audio
-        async function playReceivedAudio(base64Audio) {
-            try {
-                // Convert base64 to blob
-                const binaryString = atob(base64Audio);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                const audioBlob = new Blob([bytes], { type: 'audio/webm' });
-                
-                // Create audio element and play
-                const audio = new Audio();
-                audio.src = URL.createObjectURL(audioBlob);
-                audio.play().catch(err => {
-                    console.error('Error playing audio:', err);
-                });
-                
-                // Clean up
-                audio.onended = () => {
-                    URL.revokeObjectURL(audio.src);
-                };
-                
-            } catch (err) {
-                console.error('Error processing received audio:', err);
-            }
-        }
+        // Play received audio - VERSÃO CORRIGIDA
+async function playReceivedAudio(base64Audio) {
+    try {
+        // DEBUG: Log para verificar recebimento
+        console.log('Recebendo áudio, tamanho:', base64Audio.length);
+        
+        // Criar o blob do áudio
+        const audioBlob = base64ToBlob(base64Audio, 'audio/webm');
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        // Criar elemento de áudio
+        const audio = new Audio(audioUrl);
+        
+        // Configurações importantes para mobile
+        audio.volume = 1.0;
+        audio.playbackRate = 1.0;
+        
+        // Adicionar event listeners para debug
+        audio.oncanplaythrough = () => {
+            console.log('Áudio pronto para tocar');
+            audio.play().then(() => {
+                console.log('Áudio tocando!');
+            }).catch(err => {
+                console.error('Erro ao tocar áudio:', err);
+                showToast('Erro ao reproduzir áudio');
+            });
+        };
+        
+        audio.onerror = (e) => {
+            console.error('Erro no áudio:', e);
+            showToast('Erro ao carregar áudio');
+        };
+        
+        audio.onended = () => {
+            console.log('Áudio terminou');
+            URL.revokeObjectURL(audioUrl);
+        };
+        
+    } catch (err) {
+        console.error('Erro processando áudio recebido:', err);
+        showToast('Erro ao processar áudio');
+    }
+}
+
+// Função auxiliar para converter base64 para blob
+function base64ToBlob(base64, mimeType) {
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    return new Blob([byteArray], { type: mimeType });
+}
 
         // Handle Exit
         function handleExit() {
@@ -972,6 +1024,28 @@
 
         // Initialize app
         init();
+
+        // Função de teste de áudio
+function testAudioPlayback() {
+    // Criar um tom de teste
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.value = 440; // Tom A4
+    gainNode.gain.value = 0.1; // Volume baixo
+    
+    oscillator.start();
+    setTimeout(() => oscillator.stop(), 200); // Toca por 200ms
+    
+    showToast('Som de teste reproduzido!');
+}
+
+// Adicione um botão de teste (opcional)
+// testAudioPlayback();
     </script>
 </body>
 </html>
