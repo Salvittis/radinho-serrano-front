@@ -2,11 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#1a1a2e">
-    <title>Radinho Serrano - Walkie Talkie Online</title>
+    <title>Radinho - Walkie Talkie Online</title>
     <style>
         * {
             margin: 0;
@@ -19,16 +19,19 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height para mobile */
             display: flex;
             flex-direction: column;
             color: white;
+            overflow: hidden;
             position: fixed;
             width: 100%;
-            height: 100%;
-            overflow: hidden;
+            top: 0;
+            left: 0;
         }
 
+        /* Safe area para iPhone */
         .container {
             flex: 1;
             display: flex;
@@ -38,6 +41,7 @@
             margin: 0 auto;
             background: rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Login Screen */
@@ -55,106 +59,56 @@
         }
 
         .app-logo {
-            font-size: 80px;
+            font-size: 60px;
             margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
         }
 
         .app-title {
-            font-size: 36px;
+            font-size: 32px;
             font-weight: bold;
             margin-bottom: 10px;
-            background: linear-gradient(45deg, #fff, #ffd700);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .app-subtitle {
-            font-size: 16px;
-            opacity: 0.8;
-            margin-bottom: 40px;
         }
 
         .login-form {
             width: 100%;
             max-width: 300px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
+            margin-top: 30px;
         }
 
         .input-field {
             width: 100%;
-            padding: 15px 20px;
+            padding: 15px;
             border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
+            border-radius: 25px;
             background: rgba(255, 255, 255, 0.1);
             color: white;
             font-size: 16px;
-            transition: all 0.3s;
+            margin-bottom: 15px;
         }
 
         .input-field:focus {
             outline: none;
             border-color: #ffd700;
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .input-field::placeholder {
-            color: rgba(255, 255, 255, 0.5);
         }
 
         .login-button {
             width: 100%;
             padding: 15px;
             border: none;
-            border-radius: 50px;
+            border-radius: 25px;
             background: linear-gradient(135deg, #ffd700, #ffed4e);
             color: #1a1a2e;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
         }
 
-        .login-button:active {
-            transform: scale(0.98);
-        }
-
-        .channel-code {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-        }
-
-        .channel-code-label {
-            font-size: 12px;
-            opacity: 0.7;
-            margin-bottom: 5px;
-        }
-
-        .channel-code-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ffd700;
-            letter-spacing: 2px;
-        }
-
-        /* Radio Screen */
+        /* Radio Screen - Layout fixo para mobile */
         .radio-screen {
-            flex: 1;
             display: none;
             flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
         }
 
         .radio-screen.active {
@@ -163,15 +117,15 @@
 
         .header {
             background: rgba(0, 0, 0, 0.3);
-            padding: 15px 20px;
-            backdrop-filter: blur(10px);
+            padding: 10px 15px;
+            flex-shrink: 0;
         }
 
         .connection-status {
             display: flex;
-            align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .status-indicator {
@@ -181,135 +135,74 @@
         }
 
         .status-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #4ade80;
-            animation: blink 2s infinite;
         }
 
         .status-dot.offline {
             background: #ef4444;
-            animation: none;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        .exit-button {
-            padding: 8px 16px;
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid #ef4444;
-            border-radius: 20px;
-            color: #ef4444;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
         .channel-display {
             text-align: center;
-            padding: 20px;
+            padding: 10px;
             background: rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            margin: 0 20px;
-        }
-
-        .channel-label {
-            font-size: 12px;
-            opacity: 0.7;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 5px;
+            border-radius: 10px;
         }
 
         .channel-name {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             color: #ffd700;
-            margin-bottom: 5px;
         }
 
-        .channel-info {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-
+        /* Users Section - Scrollable */
         .users-section {
             flex: 1;
-            padding: 20px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-        }
-
-        .users-title {
-            font-size: 14px;
-            opacity: 0.7;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
+            padding: 15px;
+            min-height: 0; /* Importante para scroll funcionar */
         }
 
         .user-item {
             display: flex;
             align-items: center;
-            padding: 12px;
+            padding: 10px;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            border-radius: 10px;
             margin-bottom: 10px;
-            transition: all 0.3s;
         }
 
         .user-item.speaking {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 237, 78, 0.2));
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            transform: translateX(5px);
+            background: rgba(255, 215, 0, 0.3);
+            border: 1px solid #ffd700;
         }
 
         .user-avatar {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea, #764ba2);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
-            margin-right: 15px;
-        }
-
-        .user-item.speaking .user-avatar {
-            animation: avatarPulse 1s infinite;
-        }
-
-        @keyframes avatarPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .user-info {
-            flex: 1;
+            margin-right: 12px;
         }
 
         .user-name {
-            font-weight: 600;
-            font-size: 16px;
-            margin-bottom: 3px;
-        }
-
-        .user-status {
-            font-size: 12px;
-            opacity: 0.6;
+            flex: 1;
+            font-weight: 500;
         }
 
         .speaking-badge {
-            padding: 4px 12px;
+            padding: 4px 10px;
             background: #ffd700;
             color: #1a1a2e;
-            border-radius: 20px;
+            border-radius: 15px;
             font-size: 12px;
             font-weight: bold;
             display: none;
@@ -317,29 +210,28 @@
 
         .user-item.speaking .speaking-badge {
             display: block;
-            animation: fadeInOut 1s infinite;
         }
 
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
+        /* PTT Section - Fixo no bottom */
         .ptt-section {
-            padding: 20px;
+            padding: 15px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(10px);
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 100;
         }
 
         .ptt-button {
-            width: 140px;
-            height: 140px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background: linear-gradient(135deg, #ef4444, #dc2626);
-            border: 4px solid rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             color: white;
             display: flex;
             flex-direction: column;
@@ -347,92 +239,43 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
-            position: relative;
-            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(239, 68, 68, 0.4);
+            touch-action: none; /* Previne scroll ao tocar */
         }
 
         .ptt-button:active,
         .ptt-button.active {
             background: linear-gradient(135deg, #10b981, #059669);
             transform: scale(0.95);
-            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.6);
-        }
-
-        .ptt-button.active::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
-            animation: ripple 1s infinite;
-        }
-
-        @keyframes ripple {
-            0% { transform: scale(0.5); opacity: 1; }
-            100% { transform: scale(1.5); opacity: 0; }
+            box-shadow: 0 3px 15px rgba(16, 185, 129, 0.6);
         }
 
         .ptt-icon {
-            font-size: 50px;
-            margin-bottom: 10px;
+            font-size: 40px;
+            margin-bottom: 5px;
         }
 
         .ptt-text {
-            font-size: 14px;
+            font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
-        }
-
-        .audio-visualizer {
-            width: 100%;
-            height: 40px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            margin-top: 15px;
-        }
-
-        .audio-visualizer.active {
-            display: flex;
-        }
-
-        .audio-bar {
-            width: 4px;
-            background: linear-gradient(to top, #ffd700, #ffed4e);
-            border-radius: 2px;
-            animation: audioWave 0.5s infinite;
-        }
-
-        .audio-bar:nth-child(1) { animation-delay: 0s; height: 10px; }
-        .audio-bar:nth-child(2) { animation-delay: 0.1s; height: 20px; }
-        .audio-bar:nth-child(3) { animation-delay: 0.2s; height: 15px; }
-        .audio-bar:nth-child(4) { animation-delay: 0.3s; height: 25px; }
-        .audio-bar:nth-child(5) { animation-delay: 0.4s; height: 18px; }
-        .audio-bar:nth-child(6) { animation-delay: 0.5s; height: 22px; }
-        .audio-bar:nth-child(7) { animation-delay: 0.6s; height: 16px; }
-
-        @keyframes audioWave {
-            0%, 100% { transform: scaleY(1); }
-            50% { transform: scaleY(1.5); }
         }
 
         .toast {
             position: fixed;
-            bottom: 100px;
+            bottom: 130px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
+            padding: 10px 20px;
+            border-radius: 20px;
             font-size: 14px;
             opacity: 0;
             transition: all 0.3s;
             z-index: 1000;
+            max-width: 80%;
+            text-align: center;
         }
 
         .toast.show {
@@ -440,28 +283,43 @@
             opacity: 1;
         }
 
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        @media (max-height: 700px) {
+        /* Ajustes para telas pequenas */
+        @media (max-height: 600px) {
             .ptt-button {
-                width: 110px;
-                height: 110px;
+                width: 80px;
+                height: 80px;
             }
             .ptt-icon {
-                font-size: 40px;
+                font-size: 30px;
             }
+            .ptt-text {
+                font-size: 10px;
+            }
+            .header {
+                padding: 8px 12px;
+            }
+            .users-section {
+                padding: 10px;
+            }
+        }
+
+        /* Debug info */
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 10px;
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 9999;
+            display: none;
+        }
+
+        .debug-info.show {
+            display: block;
         }
     </style>
 </head>
@@ -470,39 +328,28 @@
         <!-- Login Screen -->
         <div class="login-screen" id="loginScreen">
             <div class="app-logo">📻</div>
-            <h1 class="app-title">Radinho Serrano</h1>
-            <p class="app-subtitle">Walkie-Talkie com seus amigos</p>
+            <h1 class="app-title">Radinho</h1>
+            <p>Walkie-Talkie com amigos</p>
             
             <div class="login-form">
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        class="input-field" 
-                        id="userName" 
-                        placeholder="Seu nome ou apelido"
-                        maxlength="20"
-                        autocomplete="off"
-                    >
-                </div>
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        class="input-field" 
-                        id="channelCode" 
-                        placeholder="Código do canal (ex: AMIGOS)"
-                        maxlength="10"
-                        autocomplete="off"
-                        style="text-transform: uppercase;"
-                    >
-                </div>
+                <input 
+                    type="text" 
+                    class="input-field" 
+                    id="userName" 
+                    placeholder="Seu nome"
+                    maxlength="20"
+                >
+                <input 
+                    type="text" 
+                    class="input-field" 
+                    id="channelCode" 
+                    placeholder="Código do canal"
+                    maxlength="10"
+                    style="text-transform: uppercase;"
+                >
                 <button class="login-button" id="joinButton">
                     ENTRAR NO CANAL
                 </button>
-            </div>
-            
-            <div class="channel-code">
-                <div class="channel-code-label">Crie um código único para seu grupo</div>
-                <div class="channel-code-value" id="suggestedCode">AMIGOS</div>
             </div>
         </div>
 
@@ -514,50 +361,42 @@
                         <div class="status-dot" id="statusDot"></div>
                         <span id="statusText">Conectando...</span>
                     </div>
-                    <button class="exit-button" id="exitButton">Sair</button>
+                    <button onclick="handleExit()" style="background: none; border: 1px solid #ef4444; color: #ef4444; padding: 5px 15px; border-radius: 15px;">
+                        Sair
+                    </button>
                 </div>
                 
                 <div class="channel-display">
-                    <div class="channel-label">Canal</div>
                     <div class="channel-name" id="channelName">-</div>
-                    <div class="channel-info">
+                    <div style="font-size: 12px; opacity: 0.7;">
                         <span id="usersCount">0</span> pessoas online
                     </div>
                 </div>
             </div>
 
-            <div class="users-section">
-                <div class="users-title">Pessoas Online</div>
+            <div class="users-section" id="usersSection">
+                <div style="font-size: 12px; opacity: 0.7; margin-bottom: 10px;">USUÁRIOS ONLINE</div>
                 <div id="usersList"></div>
             </div>
 
             <div class="ptt-section">
                 <button class="ptt-button" id="pttButton">
                     <div class="ptt-icon">🎙️</div>
-                    <div class="ptt-text" id="pttText">SEGURE PARA FALAR</div>
+                    <div class="ptt-text" id="pttText">SEGURE</div>
                 </button>
-                
-                <div class="audio-visualizer" id="audioVisualizer">
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                    <div class="audio-bar"></div>
-                </div>
             </div>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
+    <div class="debug-info" id="debugInfo"></div>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script>
-        // Configuration
-        const SOCKET_SERVER = 'https://radinho-server-1.onrender.com'; // Servidor gratuito no Glitch
+        // ===== CONFIGURAÇÃO =====
+        const SOCKET_SERVER = 'https://radinho-server-1.onrender.com'; // MUDE AQUI!
         
-        // App State
+        // ===== ESTADO DO APP =====
         let socket = null;
         let currentUser = null;
         let currentChannel = null;
@@ -566,17 +405,33 @@
         let audioStream = null;
         let audioChunks = [];
         let users = new Map();
-        let audioContext = null;
-        let audioQueue = [];
-        let isPlayingAudio = false;
 
-        // DOM Elements
+        // ===== COMPATIBILIDADE DE ÁUDIO =====
+        // Detectar melhor formato de áudio suportado
+        function getSupportedMimeType() {
+            const types = [
+                'audio/webm;codecs=opus',
+                'audio/webm',
+                'audio/ogg;codecs=opus',
+                'audio/mp4',
+                'audio/mpeg'
+            ];
+            
+            for (let type of types) {
+                if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(type)) {
+                    console.log('Usando codec:', type);
+                    return type;
+                }
+            }
+            return ''; // Usa o padrão do navegador
+        }
+
+        // ===== ELEMENTOS DOM =====
         const loginScreen = document.getElementById('loginScreen');
         const radioScreen = document.getElementById('radioScreen');
         const userNameInput = document.getElementById('userName');
         const channelCodeInput = document.getElementById('channelCode');
         const joinButton = document.getElementById('joinButton');
-        const exitButton = document.getElementById('exitButton');
         const pttButton = document.getElementById('pttButton');
         const pttText = document.getElementById('pttText');
         const statusDot = document.getElementById('statusDot');
@@ -584,39 +439,40 @@
         const channelName = document.getElementById('channelName');
         const usersCount = document.getElementById('usersCount');
         const usersList = document.getElementById('usersList');
-        const audioVisualizer = document.getElementById('audioVisualizer');
         const toast = document.getElementById('toast');
-        const suggestedCode = document.getElementById('suggestedCode');
 
-        // Generate random channel codes
-        const channelSuggestions = [
-            'AMIGOS', 'GRUPO', 'RAPAZES', 'GALERA', 'SQUAD',
-            'TEAM', 'PESSOAL', 'BROS', 'MANOS', 'TURMA'
-        ];
-
-        // Initialize
+        // ===== INICIALIZAÇÃO =====
         function init() {
             setupEventListeners();
-            generateChannelSuggestion();
+            adjustViewportHeight();
             requestMicrophonePermission();
-            initAudioContext();
+        }
+
+        // Ajustar altura para mobile
+        function adjustViewportHeight() {
+            const setVH = () => {
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${vh}px`);
+            };
+            setVH();
+            window.addEventListener('resize', setVH);
+            window.addEventListener('orientationchange', setVH);
         }
 
         // Setup Event Listeners
         function setupEventListeners() {
             joinButton.addEventListener('click', handleJoin);
-            exitButton.addEventListener('click', handleExit);
             
-            // PTT Button - Touch Events
+            // PTT Button - Touch Events (IMPORTANTE: preventDefault para evitar scroll)
             pttButton.addEventListener('touchstart', handlePTTStart, { passive: false });
             pttButton.addEventListener('touchend', handlePTTEnd, { passive: false });
             
-            // PTT Button - Mouse Events (for desktop testing)
+            // PTT Button - Mouse Events
             pttButton.addEventListener('mousedown', handlePTTStart);
             pttButton.addEventListener('mouseup', handlePTTEnd);
             pttButton.addEventListener('mouseleave', handlePTTEnd);
             
-            // Enter key on inputs
+            // Enter key
             userNameInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') channelCodeInput.focus();
             });
@@ -625,17 +481,10 @@
                 if (e.key === 'Enter') handleJoin();
             });
             
-            // Auto uppercase channel code
+            // Auto uppercase
             channelCodeInput.addEventListener('input', (e) => {
                 e.target.value = e.target.value.toUpperCase();
             });
-        }
-
-        // Generate channel suggestion
-        function generateChannelSuggestion() {
-            const randomIndex = Math.floor(Math.random() * channelSuggestions.length);
-            const randomNumber = Math.floor(Math.random() * 99) + 1;
-            suggestedCode.textContent = `${channelSuggestions[randomIndex]}${randomNumber}`;
         }
 
         // Request microphone permission
@@ -643,15 +492,10 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => track.stop());
-                console.log('Microphone permission granted');
+                console.log('✅ Permissão de microfone concedida');
             } catch (err) {
-                console.log('Microphone permission denied:', err);
+                console.log('⚠️ Permissão de microfone negada');
             }
-        }
-
-        // Initialize Audio Context
-        function initAudioContext() {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
         // Handle Join
@@ -665,17 +509,16 @@
             }
             
             currentUser = {
-                id: generateId(),
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2),
                 name: userName,
                 avatar: userName[0].toUpperCase()
             };
             
             currentChannel = channelCode;
-            
             connectToServer();
         }
 
-        // Connect to Socket Server
+        // Connect to Server
         function connectToServer() {
             showToast('Conectando...');
             
@@ -684,16 +527,14 @@
             });
             
             socket.on('connect', () => {
-                console.log('Connected to server');
+                console.log('✅ Conectado ao servidor');
                 updateConnectionStatus(true);
                 
-                // Join channel
                 socket.emit('join', {
                     user: currentUser,
                     channel: currentChannel
                 });
                 
-                // Show radio screen
                 loginScreen.classList.add('hidden');
                 radioScreen.classList.add('active');
                 channelName.textContent = currentChannel;
@@ -702,7 +543,6 @@
             });
             
             socket.on('disconnect', () => {
-                console.log('Disconnected from server');
                 updateConnectionStatus(false);
                 showToast('Desconectado');
             });
@@ -713,12 +553,12 @@
             
             socket.on('userJoined', (user) => {
                 if (user.id !== currentUser.id) {
-                    showToast(`${user.name} entrou no canal`);
+                    showToast(`${user.name} entrou`);
                 }
             });
             
             socket.on('userLeft', (user) => {
-                showToast(`${user.name} saiu do canal`);
+                showToast(`${user.name} saiu`);
             });
             
             socket.on('userSpeaking', (userId) => {
@@ -729,14 +569,10 @@
                 setUserSpeaking(userId, false);
             });
             
-            socket.on('audioData', async (data) => {
+            socket.on('audioData', (data) => {
                 if (data.userId !== currentUser.id) {
                     playReceivedAudio(data.audio);
                 }
-            });
-            
-            socket.on('error', (error) => {
-                showToast(`Erro: ${error}`);
             });
         }
 
@@ -755,7 +591,6 @@
         function updateUsersList(usersList) {
             users.clear();
             usersList.forEach(user => users.set(user.id, user));
-            
             usersCount.textContent = users.size;
             renderUsers();
         }
@@ -767,11 +602,8 @@
                 return `
                     <div class="user-item" id="user-${user.id}">
                         <div class="user-avatar">${user.avatar}</div>
-                        <div class="user-info">
-                            <div class="user-name">
-                                ${user.name} ${isCurrentUser ? '(Você)' : ''}
-                            </div>
-                            <div class="user-status">Online</div>
+                        <div class="user-name">
+                            ${user.name} ${isCurrentUser ? '(Você)' : ''}
                         </div>
                         <div class="speaking-badge">FALANDO</div>
                     </div>
@@ -793,121 +625,112 @@
             }
         }
 
-       // Handle PTT Start - VERSÃO CORRIGIDA
-async function handlePTTStart(e) {
-    e.preventDefault();
-    
-    if (!socket || !socket.connected) {
-        showToast('Você está desconectado!');
-        return;
-    }
-    
-    if (isTransmitting) return;
-    
-    try {
-        // Get microphone com configurações otimizadas
-        audioStream = await navigator.mediaDevices.getUserMedia({ 
-            audio: {
-                echoCancellation: false, // Mudado para false
-                noiseSuppression: false, // Mudado para false
-                autoGainControl: true,
-                sampleRate: 16000 // Taxa de amostragem menor
-            }
-        });
+        // ===== ÁUDIO - VERSÃO CORRIGIDA =====
         
-        // Start recording com configurações específicas
-        const options = {
-            mimeType: 'audio/webm;codecs=opus' // Força codec opus
-        };
-        
-        // Tenta criar o MediaRecorder com o codec ideal
-        try {
-            mediaRecorder = new MediaRecorder(audioStream, options);
-        } catch (err) {
-            // Se falhar, usa o padrão
-            console.log('Codec opus não suportado, usando padrão');
-            mediaRecorder = new MediaRecorder(audioStream);
-        }
-        
-        audioChunks = [];
-        
-        mediaRecorder.ondataavailable = (event) => {
-            if (event.data.size > 0) {
-                audioChunks.push(event.data);
-            }
-        };
-        
-        mediaRecorder.onstop = async () => {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        // Handle PTT Start
+        async function handlePTTStart(e) {
+            e.preventDefault();
+            e.stopPropagation();
             
-            // Converter para base64 de forma mais eficiente
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64Audio = reader.result.split(',')[1]; // Remove o prefixo data:audio/webm;base64,
+            if (!socket || !socket.connected) {
+                showToast('Você está desconectado!');
+                return;
+            }
+            
+            if (isTransmitting) return;
+            
+            try {
+                // Configuração de áudio otimizada para compatibilidade
+                const constraints = {
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 16000 // Taxa menor para compatibilidade
+                    }
+                };
                 
-                // DEBUG: Log para verificar se está enviando
-                console.log('Enviando áudio, tamanho:', base64Audio.length);
+                audioStream = await navigator.mediaDevices.getUserMedia(constraints);
                 
-                // Send audio to server
-                socket.emit('audioData', {
+                // Configurar MediaRecorder com fallback
+                const mimeType = getSupportedMimeType();
+                const options = mimeType ? { mimeType } : {};
+                
+                mediaRecorder = new MediaRecorder(audioStream, options);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    // Criar blob e converter para base64
+                    const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+                    
+                    // Usar FileReader para conversão confiável
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64String = reader.result;
+                        const base64Audio = base64String.split(',')[1];
+                        
+                        console.log('📤 Enviando áudio, tamanho:', base64Audio.length);
+                        
+                        socket.emit('audioData', {
+                            userId: currentUser.id,
+                            audio: base64Audio,
+                            channel: currentChannel
+                        });
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+                
+                // Começar gravação
+                mediaRecorder.start(100); // Chunks de 100ms
+                
+                isTransmitting = true;
+                pttButton.classList.add('active');
+                pttText.textContent = 'FALANDO';
+                
+                socket.emit('speaking', {
                     userId: currentUser.id,
-                    audio: base64Audio,
-                    channel: currentChannel,
-                    mimeType: 'audio/webm' // Envia o tipo também
+                    channel: currentChannel
                 });
-            };
-            reader.readAsDataURL(audioBlob);
-        };
-        
-        // Começar a gravar com intervalo de tempo
-        mediaRecorder.start(100); // Grava em chunks de 100ms
-        
-        isTransmitting = true;
-        pttButton.classList.add('active');
-        pttText.textContent = 'FALANDO...';
-        audioVisualizer.classList.add('active');
-        
-        // Notify server
-        socket.emit('speaking', {
-            userId: currentUser.id,
-            channel: currentChannel
-        });
-        
-        // Update own speaking state
-        setUserSpeaking(currentUser.id, true);
-        
-        // Haptic feedback
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
+                
+                setUserSpeaking(currentUser.id, true);
+                
+                // Haptic feedback
+                if (navigator.vibrate) navigator.vibrate(30);
+                
+            } catch (err) {
+                console.error('❌ Erro no microfone:', err);
+                showToast('Erro: ' + err.message);
+            }
         }
-        
-    } catch (err) {
-        console.error('Erro ao acessar microfone:', err);
-        showToast('Erro ao acessar microfone: ' + err.message);
-    }
-}
 
         // Handle PTT End
-        function handlePTTEnd() {
+        function handlePTTEnd(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
             if (!isTransmitting) return;
             
             isTransmitting = false;
             pttButton.classList.remove('active');
-            pttText.textContent = 'SEGURE PARA FALAR';
-            audioVisualizer.classList.remove('active');
+            pttText.textContent = 'SEGURE';
             
-            // Stop recording
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 mediaRecorder.stop();
             }
             
-            // Stop audio stream
             if (audioStream) {
                 audioStream.getTracks().forEach(track => track.stop());
                 audioStream = null;
             }
             
-            // Notify server
             if (socket && socket.connected) {
                 socket.emit('stopSpeaking', {
                     userId: currentUser.id,
@@ -915,66 +738,83 @@ async function handlePTTStart(e) {
                 });
             }
             
-            // Update own speaking state
             setUserSpeaking(currentUser.id, false);
         }
 
-        // Play received audio - VERSÃO CORRIGIDA
-async function playReceivedAudio(base64Audio) {
-    try {
-        // DEBUG: Log para verificar recebimento
-        console.log('Recebendo áudio, tamanho:', base64Audio.length);
-        
-        // Criar o blob do áudio
-        const audioBlob = base64ToBlob(base64Audio, 'audio/webm');
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        // Criar elemento de áudio
-        const audio = new Audio(audioUrl);
-        
-        // Configurações importantes para mobile
-        audio.volume = 1.0;
-        audio.playbackRate = 1.0;
-        
-        // Adicionar event listeners para debug
-        audio.oncanplaythrough = () => {
-            console.log('Áudio pronto para tocar');
-            audio.play().then(() => {
-                console.log('Áudio tocando!');
-            }).catch(err => {
-                console.error('Erro ao tocar áudio:', err);
-                showToast('Erro ao reproduzir áudio');
-            });
-        };
-        
-        audio.onerror = (e) => {
-            console.error('Erro no áudio:', e);
-            showToast('Erro ao carregar áudio');
-        };
-        
-        audio.onended = () => {
-            console.log('Áudio terminou');
-            URL.revokeObjectURL(audioUrl);
-        };
-        
-    } catch (err) {
-        console.error('Erro processando áudio recebido:', err);
-        showToast('Erro ao processar áudio');
-    }
-}
+        // Play received audio - VERSÃO COM MÚLTIPLOS FALLBACKS
+        async function playReceivedAudio(base64Audio) {
+            try {
+                console.log('📥 Recebendo áudio, tamanho:', base64Audio.length);
+                
+                // Método 1: Data URL direto (mais compatível)
+                const audio = new Audio();
+                audio.src = 'data:audio/webm;base64,' + base64Audio;
+                
+                // Configurações para melhor compatibilidade
+                audio.volume = 1.0;
+                audio.preload = 'auto';
+                
+                // Tentar tocar com tratamento de erro
+                const playPromise = audio.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✅ Áudio reproduzindo');
+                        })
+                        .catch(error => {
+                            console.error('❌ Erro ao tocar (método 1):', error);
+                            // Tentar método alternativo
+                            playAudioAlternative(base64Audio);
+                        });
+                }
+                
+                // Limpar após tocar
+                audio.onended = () => {
+                    audio.src = '';
+                };
+                
+            } catch (err) {
+                console.error('❌ Erro geral no áudio:', err);
+                // Tentar método alternativo
+                playAudioAlternative(base64Audio);
+            }
+        }
 
-// Função auxiliar para converter base64 para blob
-function base64ToBlob(base64, mimeType) {
-    const byteCharacters = atob(base64);
-    const byteNumbers = new Array(byteCharacters.length);
-    
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    
-    const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: mimeType });
-}
+        // Método alternativo para tocar áudio
+        function playAudioAlternative(base64Audio) {
+            try {
+                // Método 2: Criar blob e object URL
+                const byteCharacters = atob(base64Audio);
+                const byteNumbers = new Array(byteCharacters.length);
+                
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'audio/webm' });
+                const url = URL.createObjectURL(blob);
+                
+                const audio = new Audio(url);
+                audio.play()
+                    .then(() => {
+                        console.log('✅ Áudio reproduzindo (método alternativo)');
+                    })
+                    .catch(err => {
+                        console.error('❌ Falha no método alternativo:', err);
+                        showToast('Erro ao reproduzir áudio');
+                    });
+                
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                };
+                
+            } catch (err) {
+                console.error('❌ Erro no método alternativo:', err);
+                showToast('Formato de áudio incompatível');
+            }
+        }
 
         // Handle Exit
         function handleExit() {
@@ -985,19 +825,15 @@ function base64ToBlob(base64, mimeType) {
             radioScreen.classList.remove('active');
             loginScreen.classList.remove('hidden');
             
-            // Clear inputs
             userNameInput.value = '';
             channelCodeInput.value = '';
             
-            // Reset state
             currentUser = null;
             currentChannel = null;
             users.clear();
-            
-            generateChannelSuggestion();
         }
 
-        // Show toast message
+        // Show toast
         function showToast(message) {
             toast.textContent = message;
             toast.classList.add('show');
@@ -1007,12 +843,21 @@ function base64ToBlob(base64, mimeType) {
             }, 3000);
         }
 
-        // Generate unique ID
-        function generateId() {
-            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        // Debug mode (ative com ?debug na URL)
+        if (window.location.search.includes('debug')) {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.classList.add('show');
+            setInterval(() => {
+                debugInfo.innerHTML = `
+                    Socket: ${socket?.connected ? '✅' : '❌'}<br>
+                    Canal: ${currentChannel || 'N/A'}<br>
+                    Users: ${users.size}<br>
+                    TX: ${isTransmitting ? '📡' : '⭕'}
+                `;
+            }, 1000);
         }
 
-        // Prevent zoom on double tap (iOS)
+        // Prevent zoom on double tap
         let lastTouchEnd = 0;
         document.addEventListener('touchend', (e) => {
             const now = Date.now();
@@ -1022,30 +867,8 @@ function base64ToBlob(base64, mimeType) {
             lastTouchEnd = now;
         }, false);
 
-        // Initialize app
+        // Initialize
         init();
-
-        // Função de teste de áudio
-function testAudioPlayback() {
-    // Criar um tom de teste
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
-    
-    oscillator.frequency.value = 440; // Tom A4
-    gainNode.gain.value = 0.1; // Volume baixo
-    
-    oscillator.start();
-    setTimeout(() => oscillator.stop(), 200); // Toca por 200ms
-    
-    showToast('Som de teste reproduzido!');
-}
-
-// Adicione um botão de teste (opcional)
-// testAudioPlayback();
     </script>
 </body>
 </html>
